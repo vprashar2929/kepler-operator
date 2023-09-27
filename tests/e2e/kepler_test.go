@@ -26,7 +26,12 @@ func TestKepler_Deletion(t *testing.T) {
 
 	//
 	ds := appsv1.DaemonSet{}
-	f.AssertResourceExists(exporter.DaemonSetName, components.Namespace, &ds, test.Timeout(10*time.Second))
+	f.AssertResourceExists(
+		exporter.DaemonSetName,
+		components.Namespace,
+		&ds,
+		test.Timeout(10*time.Second),
+	)
 
 	f.DeleteKepler("kepler")
 
@@ -88,7 +93,8 @@ func TestNodeSelector(t *testing.T) {
 	err = f.AddResourceLabels("node", node, labels)
 	assert.NoError(t, err, "could not label node")
 	t.Cleanup(func() {
-		f.RemoveResourceLabels("node", node, []string{"e2e-test"})
+		err := f.RemoveResourceLabels("node", node, []string{"e2e-test"})
+		assert.NoError(t, err, "could not remove label from node")
 	})
 
 	f.CreateKepler("kepler", func(k *v1alpha1.Kepler) {
@@ -131,7 +137,8 @@ func TestTaint_WithToleration(t *testing.T) {
 	assert.NoError(t, err, "failed to taint node %s", node)
 	t.Cleanup(func() {
 		// remove taint
-		f.TaintNode(node, fmt.Sprintf("%s-", e2eTestTaint.Key))
+		err := f.TaintNode(node, fmt.Sprintf("%s-", e2eTestTaint.Key))
+		assert.NoError(t, err, "could not remove taint from node")
 	})
 
 	f.CreateKepler("kepler", func(k *v1alpha1.Kepler) {
