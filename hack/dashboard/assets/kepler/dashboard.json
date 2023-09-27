@@ -28,13 +28,244 @@
   "liveNow": false,
   "panels": [
     {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "List of different CPU architecture with number of nodes",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "center",
+            "displayMode": "auto",
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 0
+      },
+      "id": 29,
+      "links": [
+        {
+          "targetBlank": true,
+          "title": "Kepler metrics for Container Energy Consumption",
+          "url": "https://github.com/sustainable-computing-io/kepler-doc/blob/84e3e01a0110829937cd40f9634dd8d0c92540a4/docs/design/metrics.md#kepler-metrics-for-node-information"
+        }
+      ],
+      "options": {
+        "footer": {
+          "enablePagination": true,
+          "fields": ["Value"],
+          "reducer": ["sum"],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "8.5.5",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "sum by (cpu_architecture)(kepler_node_info)",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "__auto",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "CPU Architecture",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "Value": "Number of Nodes",
+              "cpu_architecture": "Architecture"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Total energy consumption of the host. (kWh per day)",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "kwatth"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 8,
+        "y": 0
+      },
+      "id": 25,
+      "links": [
+        {
+          "targetBlank": true,
+          "title": "Kepler metrics for Container Energy Consumption",
+          "url": "https://github.com/sustainable-computing-io/kepler-doc/blob/84e3e01a0110829937cd40f9634dd8d0c92540a4/docs/design/metrics.md#kepler-metrics-for-container-energy-consumption"
+        }
+      ],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "value"
+      },
+      "pluginVersion": "8.5.5",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": " sum(\n  (increase(kepler_container_joules_total{container_namespace=~\".*\"}[1h])\n    * $watt_per_second_to_kWh\n  ) *\n  (count_over_time(kepler_container_joules_total{container_namespace=~\".*\"}[24h])/\n    count_over_time(kepler_container_joules_total{container_namespace=~\".*\"}[1h])\n  )\n)",
+          "hide": false,
+          "instant": true,
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Total Energy Consumption ($source)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Total number of Kepler pods up and running",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 0
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 14,
+        "y": 0
+      },
+      "id": 22,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["last"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "8.5.5",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "sum(kepler_node_info)",
+          "instant": false,
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Total Kepler Pods",
+      "type": "stat"
+    },
+    {
       "collapsed": false,
       "datasource": "prometheus",
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 0
+        "y": 6
       },
       "id": 8,
       "panels": [],
@@ -70,7 +301,7 @@
         "h": 12,
         "w": 24,
         "x": 0,
-        "y": 1
+        "y": 7
       },
       "id": 18,
       "links": [
@@ -262,7 +493,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 13
+        "y": 19
       },
       "id": 2,
       "options": {
@@ -452,7 +683,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 13
+        "y": 19
       },
       "id": 17,
       "options": {
@@ -583,7 +814,7 @@
         "h": 10,
         "w": 12,
         "x": 0,
-        "y": 21
+        "y": 27
       },
       "id": 16,
       "links": [
@@ -679,7 +910,7 @@
         "h": 10,
         "w": 12,
         "x": 12,
-        "y": 21
+        "y": 27
       },
       "id": 23,
       "links": [
@@ -775,7 +1006,7 @@
         "h": 10,
         "w": 12,
         "x": 0,
-        "y": 31
+        "y": 37
       },
       "id": 26,
       "links": [
@@ -871,7 +1102,7 @@
         "h": 10,
         "w": 12,
         "x": 12,
-        "y": 31
+        "y": 37
       },
       "id": 27,
       "links": [
@@ -1005,6 +1236,28 @@
         "query": "0.000000277777777777778",
         "skipUrlSync": false,
         "type": "constant"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "definition": "label_values(kepler_node_platform_joules_total,source)",
+        "description": "Source Type",
+        "hide": 2,
+        "includeAll": false,
+        "multi": false,
+        "name": "source",
+        "options": [],
+        "query": {
+          "query": "label_values(kepler_node_platform_joules_total,source)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
       }
     ]
   },
