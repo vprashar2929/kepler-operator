@@ -1,7 +1,9 @@
 name: pr-checks
 
 on:
-  pull_request:
+  push:
+    branches:
+      - test-image-cache
 
 jobs:
   docs:
@@ -27,7 +29,7 @@ jobs:
       - name: Install all tools
         uses: ./.github/tools-cache
       - name: make fmt
-        run:  make fmt && git diff --exit-code
+        run: make fmt && git diff --exit-code
 
   escapes_detect:
     runs-on: ubuntu-latest
@@ -145,6 +147,11 @@ jobs:
           cluster_provider: kind
         env:
           PROMETHEUS_ENABLE: "true"
+
+      - name: Cache Docker images.
+        uses: ScribeMD/docker-cache@0.3.6
+        with:
+          key: docker-${{ runner.os }}-${{ hashFiles('./tests/docker-compose.yaml') }}
 
       - name: Ensure cluster is able to run OLM bundles
         run: make cluster-prereqs
