@@ -823,6 +823,15 @@ Kepler Model Server Spec
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>resourceDir</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+          <br/>
+            <i>Default</i>: <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#keplerinternalspecmodelserverstorage">storage</a></b></td>
         <td>object</td>
         <td>

@@ -82,6 +82,9 @@ type InternalModelServerSpec struct {
 	Path string `json:"path,omitempty"`
 
 	// +kubebuilder:default=""
+	ResourceDir string `json:"resourceDir,omitempty"`
+
+	// +kubebuilder:default=""
 	RequestPath string `json:"requestPath,omitempty"`
 
 	// +kubebuilder:default=""

@@ -35,7 +35,8 @@ func TestConfigMap(t *testing.T) {
 		{
 			spec: &v1alpha1.InternalModelServerSpec{},
 			data: map[string]string{
-				"MODEL_PATH": "/mnt/models",
+				"MODEL_PATH":   "/mnt/models",
+				"RESOURCE_DIR": "/data/resource",
 			},
 			scenario: "default case",
 		},
@@ -47,6 +48,7 @@ func TestConfigMap(t *testing.T) {
 				ListPath:    "fake-model-list-path",
 				PipelineURL: "fake-pipeline",
 				ErrorKey:    "fake-error-key",
+				ResourceDir: "fake-resource-dir",
 			},
 			data: map[string]string{
 				"MODEL_PATH":                   "fake-model-path",
@@ -54,6 +56,7 @@ func TestConfigMap(t *testing.T) {
 				"MODEL_SERVER_MODEL_LIST_PATH": "fake-model-list-path",
 				"INITIAL_PIPELINE_URL":         "fake-pipeline",
 				"ERROR_KEY":                    "fake-error-key",
+				"RESOURCE_DIR":                 "fake-resource-dir",
 			},
 			scenario: "user defined server-api config",
 		},

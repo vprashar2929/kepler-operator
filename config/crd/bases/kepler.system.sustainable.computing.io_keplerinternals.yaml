@@ -274,6 +274,9 @@ spec:
                   requestPath:
                     default: ""
                     type: string
+                  resourceDir:
+                    default: ""
+                    type: string
                   storage:
                     properties:
                       persistentVolumeClaim:
