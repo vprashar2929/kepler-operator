@@ -260,10 +260,20 @@ func (f Framework) WaitUntilInternalCondition(name string, t v1alpha1.ConditionT
 		func() (bool, error) {
 			err := f.client.Get(context.TODO(), client.ObjectKey{Name: name}, &k)
 			if errors.IsNotFound(err) {
-				return true, fmt.Errorf("kepler-internal %s is not found", name)
+				// The resource may not be created yet, keep waiting
+				return false, nil
+				// return true, fmt.Errorf("kepler-internal %s is not found", name)
+			}
+			if err != nil {
+				f.T.Logf("Error getting kepler-internal %s: %v", name, err)
+				return false, nil
 			}
 
-			condition, _ := k8s.FindCondition(k.Status.Exporter.Conditions, t)
+			condition, cErr := k8s.FindCondition(k.Status.Exporter.Conditions, t)
+			if cErr != nil {
+				f.T.Logf("Error finding condition %s: %v", t, cErr)
+				return false, nil
+			}
 			return condition.Status == s, nil
 		}, fns...)
 	return &k
@@ -276,9 +286,14 @@ func (f Framework) AssertEstimatorStatus(name string, fns ...AssertOptionFn) *v1
 	f.WaitUntil(fmt.Sprintf("estimator for %s has expected status", name), func() (bool, error) {
 		err := f.client.Get(context.TODO(), client.ObjectKey{Name: name}, &k)
 		if errors.IsNotFound(err) {
-			return true, fmt.Errorf("kepler-internal %s is not found", name)
+			// The resource may not be created yet, keep waiting
+			return false, nil
+			// return true, fmt.Errorf("kepler-internal %s is not found", name)
 		}
-
+		if err != nil {
+			f.T.Logf("Error getting estimator %s: %v", name, err)
+			return false, nil
+		}
 		enabled := k.Spec.Estimator != nil && k.Spec.Estimator.Enabled()
 		expected := v1alpha1.DeploymentNotInstalled
 		if enabled {
@@ -299,7 +314,13 @@ func (f Framework) AssertModelServerStatus(name string, fns ...AssertOptionFn) *
 	f.WaitUntil(fmt.Sprintf("model-server for %s has expected status", name), func() (bool, error) {
 		err := f.client.Get(context.TODO(), client.ObjectKey{Name: name}, &k)
 		if errors.IsNotFound(err) {
-			return true, fmt.Errorf("kepler-internal %s is not found", name)
+			// The resource may not be created yet, keep waiting
+			return false, nil
+			// return true, fmt.Errorf("kepler-internal %s is not found", name)
+		}
+		if err != nil {
+			f.T.Logf("Error getting model-server %s: %v", name, err)
+			return false, nil
 		}
 
 		enabled := k.Spec.ModelServer != nil && k.Spec.ModelServer.Enabled
