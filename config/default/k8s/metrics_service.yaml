@@ -9,14 +9,14 @@ metadata:
   namespace: system
 spec:
   ports:
-    - name: metrics
-      port: 8080
-      protocol: TCP
-      targetPort: 8080
-  # - name: https
-  #   port: 8443
-  #   protocol: TCP
-  #   targetPort: 8443
+    # - name: metrics
+    #   port: 8080
+    #   protocol: TCP
+    #   targetPort: 8080
+  - name: https
+    port: 8443
+    protocol: TCP
+    targetPort: 8443
   selector:
       app.kubernetes.io/instance: controller-manager
       app.kubernetes.io/component: manager
