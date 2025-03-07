@@ -1,0 +1,59 @@
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: gpu-burn-scc
+allowPrivilegedContainer: true
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowHostDirVolumePlugin: false
+allowRunAsRoot: true
+allowPrivilegeEscalation: true
+allowedCapabilities:
+  - SYS_ADMIN
+readOnlyRootFilesystem: false
+users:
+  - system:serviceaccount:gpu-test:gpu-burn-sa
+
+--- 
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: gpu-burn-sa
+  namespace: gpu-test
+
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: gpu-burn
+  namespace: gpu-test
+spec:
+  selector:
+    matchLabels:
+      app: gpu-burn
+  template:
+    metadata:
+      labels:
+        app: gpu-burn
+    spec:
+      serviceAccountName: gpu-burn-sa  # Use the designated service account
+      restartPolicy: Always
+      nodeSelector:
+        nvidia.com/gpu.present: "true"  # Runs only on GPU nodes
+      containers:
+        - name: gpu-burn
+          image: oguzpastirmaci/gpu-burn:latest
+          args: ["120"]  # Runs for 120 seconds
+          resources:
+            limits:
+              nvidia.com/gpu: 1  # Requests 1 GPU per pod
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["SYS_ADMIN"]
+      tolerations:
+        - key: "nvidia.com/gpu"
+          operator: "Exists"
+          effect: "NoSchedule"
+

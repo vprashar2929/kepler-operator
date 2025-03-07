@@ -1,0 +1,29 @@
+apiVersion: kepler.system.sustainable.computing.io/v1alpha1
+kind: KeplerInternal
+metadata:
+  name: kepler
+spec:
+  exporter:
+    deployment:
+      # image: quay.io/rh_ee_vprashar/kepler:test-ci
+      image: quay.io/sustainable_computing_io/kepler:release-0.7.10-dcgm
+      namespace: kepler-operator
+      port: 9103
+      # nodeSelector:
+      #   foo: bar
+      tolerations:
+        - operator: Exists
+  openshift:
+    dashboard:
+      enabled: true
+    enabled: true
+  # modelServer:
+  #   enabled: true
+  # estimator:
+  #   node:
+  #     components:
+  #       sidecar: true
+  #       # initUrl: https://raw.githubusercontent.com/sunya-ch/kepler-model-db/css-117/models/v0.6/css-117/core96_v0.6/rapl/AbsPower/BPFOnly/KNeighborsRegressorTrainer_1.zip
+  #     total:
+  #       sidecar: true
+  #       # initUrl: https://raw.githubusercontent.com/sunya-ch/kepler-model-db/css-117/models/v0.6/css-117/core96_v0.6/acpi/AbsPower/BPFOnly/GradientBoostingRegressorTrainer_1.zip

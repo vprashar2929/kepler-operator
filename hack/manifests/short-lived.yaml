@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: short-lived-job
+spec:
+  parallelism: 60  # Set to 10 * number of nodes (e.g., 30 for 3 nodes)
+  template:
+    spec:
+      tolerations:
+      - key: "node-role.kubernetes.io/master"
+        operator: "Exists"
+        effect: "NoSchedule"
+      - key: "node-role.kubernetes.io/control-plane"
+        operator: "Exists"
+        effect: "NoSchedule"
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            job-name: short-lived-job
+      containers:
+      - name: short-lived-container
+        image: polinux/stress-ng
+        command: ["stress-ng", "--cpu", "16", "--cpu-method", "ackermann", "--cpu-load", "100", "--timeout", "5s"]
+      restartPolicy: Never
+  ttlSecondsAfterFinished: 5

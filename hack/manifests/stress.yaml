@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: stress-ng
+  namespace: stress
+spec:
+  selector:
+    matchLabels:
+      app: stress-ng
+  template:
+    metadata:
+      labels:
+        app: stress-ng
+    spec:
+      tolerations:
+      - key: "node-role.kubernetes.io/master"
+        operator: "Exists"
+        effect: "NoSchedule"
+      - key: "node-role.kubernetes.io/control-plane"
+        operator: "Exists"
+        effect: "NoSchedule"
+      containers:
+      - name: stress-ng
+        image: polinux/stress-ng
+        command: ["/bin/bash", "/scripts/stressor.sh"]
+        # args:
+        # - "-t"
+        # - "3600"  # Total time in seconds (e.g., 1 hour)
+        # - "-c"
+        # - "default"  # Curve type: "default" or "stepwise"
+        workingDir: /temp
+        volumeMounts:
+        - name: script-volume
+          mountPath: /scripts
+        - name: temp-volume
+          mountPath: /temp
+      volumes:
+      - name: script-volume
+        configMap:
+          name: stress-ng-script
+      - name: temp-volume
+        emptyDir: {}

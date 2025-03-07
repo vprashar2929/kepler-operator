@@ -1,0 +1,28 @@
+  # apiVersion: operator.openshift.io/v1alpha1
+  # kind: ImageContentSourcePolicy
+  # metadata:
+  #   name: test-registry
+  # spec:
+  #   repositoryDigestMirrors:
+  #   - mirrors:
+  #     - upshift.mirror-registry.qe.devcluster.openshift.com:5000 # For Eg: ec2-3-15-150-44.us-east-2.compute.amazonaws.com:5000
+  #     source: registry-proxy.engineering.redhat.com
+
+apiVersion: config.openshift.io/v1
+kind: ImageDigestMirrorSet
+metadata:
+  name: test-registry
+spec:
+  imageDigestMirrors:
+  # - mirrors:
+  #   - quay.io/redhat-user-workloads/rhpm-tenant/kepler
+  #   source: registry.redhat.io/openshift-power-monitoring/kepler-rhel9
+  # - mirrors:
+  #   - quay.io/redhat-user-workloads/rhpm-tenant/power-monitoring-operator
+  #   source: registry.redhat.io/openshift-power-monitoring/power-monitoring-rhel9-operator
+  # - mirrors:
+  #   - quay.io/redhat-user-workloads/rhpm-tenant/power-monitoring-operator-bundle
+  #   source: registry.redhat.io/openshift-power-monitoring/power-monitoring-operator-bundle
+  - mirrors:
+      - brew.registry.redhat.io
+    source: registry-proxy.engineering.redhat.com
