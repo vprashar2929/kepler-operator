@@ -187,6 +187,10 @@ spec:
           - subjectaccessreviews
           verbs:
           - create
+        - nonResourceURLs:
+          - /metrics
+          verbs:
+          - get
         serviceAccountName: kepler-operator-controller-manager
       deployments:
       - label:
