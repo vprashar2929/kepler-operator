@@ -17,6 +17,8 @@ jobs:
     name: Upload Release Asset
     permissions:
       contents: write
+      pull-requests: write
+      issues: write
 
     runs-on: ubuntu-latest
     steps:
@@ -27,19 +29,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Login to Quay
-        uses: docker/login-action@v2
-        with:
-          registry: quay.io/sustainable_computing_io
-          username: ${{ secrets.BOT_NAME }}
-          password: ${{ secrets.BOT_TOKEN }}
-
-      - name: Git set user
-        run: |
-          git config  user.name "$USERNAME"
-          git config  user.email "$USERNAME-[bot]@users.noreply.github.com"
-        env:
-          USERNAME: ${{ github.actor }}
+      # - name: Login to Quay
+      #   uses: docker/login-action@v2
+      #   with:
+      #     registry: quay.io/sustainable_computing_io
+      #     username: ${{ secrets.BOT_NAME }}
+      #     password: ${{ secrets.BOT_TOKEN }}
 
       - name: Update the VERSION
         run: |
@@ -50,11 +45,11 @@ jobs:
       - name: Install all tools
         uses: ./.github/tools-cache
 
-      - name: Build Operator
-        run: |
-          make operator-build
-        env:
-          IMG_BASE: ${{ vars.IMG_BASE }}
+      # - name: Build Operator
+      #   run: |
+      #     make operator-build
+      #   env:
+      #     IMG_BASE: ${{ vars.IMG_BASE }}
 
       - name: Build Bundle
         run: |
@@ -63,33 +58,65 @@ jobs:
           IMG_BASE: ${{ vars.IMG_BASE }}
           VERSION_REPLACED: ${{ github.event.inputs.version-replace }}
 
-      - name: Commit bundle changes and tag it
+      # - name: Commit bundle changes and tag it
+      #   run: |
+      #     git add VERSION bundle
+      #     git commit -m "ci: update VERSION to $VERSION"
+      #     git tag -a "v$VERSION" -m "$VERSION"
+      #     git show --stat
+      #   env:
+      #     VERSION: ${{ github.event.inputs.tag }}
+      - name: Git set user
         run: |
-          git add VERSION bundle
-          git commit -m "ci: update VERSION to $VERSION"
-          git tag -a "v$VERSION" -m "$VERSION"
-          git show --stat
+          git config  user.name "$USERNAME"
+          git config  user.email "$USERNAME-[bot]@users.noreply.github.com"
         env:
-          VERSION: ${{ github.event.inputs.tag }}
+          USERNAME: ${{ github.actor }}
 
-      - name: Push Images
+      - name: Tag the release
         run: |
-          make operator-push  bundle-push
-        env:
-          IMG_BASE: ${{ vars.IMG_BASE }}
+          git tag -a "v${{ github.event.inputs.tag }}" -m "v${{ github.event.inputs.tag }}"
+          git show --stat
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: update VERSION to ${{ github.event.inputs.tag }}"
+          committer: github-actions[bot] <${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com>
+          author: ${{ github.actor }} <${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com>
+          signoff: true
+          branch: chore-version-${{ github.event.inputs.tag }}
+          delete-branch: true
+          title: 'chore: update VERSION to ${{ github.event.inputs.tag }}'
+          body: |
+            Update VERSION to ${{ github.event.inputs.tag }}
+
+            This is an automated PR to update the VERSION to ${{ github.event.inputs.tag }}
+          labels: |
+            chore
+          assignees: vprashar2929
+          reviewers: vprashar2929
+          draft: false
+
+      # - name: Push Images
+      #   run: |
+      #     make operator-push  bundle-push
+      #   env:
+      #     IMG_BASE: ${{ vars.IMG_BASE }}
 
       - name: Push Release tag
         run: |
-          git push --follow-tags
+          git push --tags
 
       - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: v${{ github.event.inputs.tag }}
-          release_name: release-${{github.event.inputs.tag}}
+          name: release-${{github.event.inputs.tag}}
+          generate_release_notes: true
           draft: false
           prerelease: false
 
