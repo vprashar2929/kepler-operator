@@ -1,8 +1,8 @@
 module github.com/sustainable.computing.io/kepler-operator
 
-go 1.23
+go 1.22.0
 
-toolchain go1.23.3
+toolchain go1.24.1
 
 require (
 	dario.cat/mergo v1.0.0
