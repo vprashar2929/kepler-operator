@@ -32,13 +32,13 @@ const (
 	PowerMonitorDSPort          = 28282
 
 	// Dashboard
-	InfoDashboardName = "power-monitor-node-info"
+	OverviewDashboardName      = "power-monitor-overview"
+	NamespaceInfoDashboardName = "power-monitor-namespace-info"
 
 	SysFSMountPath      = "/host/sys"
 	ProcFSMountPath     = "/host/proc"
 	KeplerConfigMapPath = "/etc/kepler"
 	KeplerConfigFile    = "config.yaml"
-	EnableVMTestKey     = "powermonitor.sustainable.computing.io/test-env-vm"
 
 	// ConfigMap annotations
 	ConfigMapHashAnnotation = "powermonitor.sustainable.computing.io/config-map-hash"
@@ -48,8 +48,11 @@ var (
 	linuxNodeSelector = k8s.StringMap{
 		"kubernetes.io/os": "linux",
 	}
-	//go:embed assets/dashboards/power-monitor-node-info.json
+	//go:embed assets/dashboards/power-monitor-overview.json
 	infoDashboardJson string
+
+	//go:embed assets/dashboards/power-monitor-namespace-info.json
+	namespaceInfoDashboardJson string
 )
 
 func NewPowerMonitorDaemonSet(detail components.Detail, pmi *v1alpha1.PowerMonitorInternal) *appsv1.DaemonSet {
@@ -137,8 +140,12 @@ func NewPowerMonitorService(pmi *v1alpha1.PowerMonitorInternal) *corev1.Service 
 	}
 }
 
+func NewPowerMonitorNamespaceInfoDashboard(d components.Detail) *corev1.ConfigMap {
+	return openshiftDashboardConfigMap(d, NamespaceInfoDashboardName, fmt.Sprintf("%s.json", NamespaceInfoDashboardName), namespaceInfoDashboardJson)
+}
+
 func NewPowerMonitorInfoDashboard(d components.Detail) *corev1.ConfigMap {
-	return openshiftDashboardConfigMap(d, InfoDashboardName, fmt.Sprintf("%s.json", InfoDashboardName), infoDashboardJson)
+	return openshiftDashboardConfigMap(d, OverviewDashboardName, fmt.Sprintf("%s.json", OverviewDashboardName), infoDashboardJson)
 }
 
 func NewPowerMonitorConfigMap(d components.Detail, pmi *v1alpha1.PowerMonitorInternal, additionalConfigs ...string) *corev1.ConfigMap {
@@ -406,9 +413,16 @@ func newPowerMonitorContainer(pmi *v1alpha1.PowerMonitorInternal) corev1.Contain
 		Name:            pmi.DaemonsetName(),
 		SecurityContext: &corev1.SecurityContext{Privileged: ptr.To(true)},
 		Image:           deployment.Image,
+		ImagePullPolicy: corev1.PullAlways,
+		Env: []corev1.EnvVar{{
+			Name:      "NODE_NAME",
+			ValueFrom: k8s.EnvFromField("spec.nodeName"),
+		}},
 		Command: []string{
 			"/usr/bin/kepler",
 			fmt.Sprintf("--config.file=%s", configMapPath),
+			"--kube.enable",
+			"--kube.node-name=$(NODE_NAME)",
 		},
 		Ports: []corev1.ContainerPort{{
 			ContainerPort: int32(PowerMonitorDSPort),
@@ -448,11 +462,6 @@ func KeplerConfig(pmi *v1alpha1.PowerMonitorInternal, additionalConfigs ...strin
 	cfg, err := b.Build()
 	if err != nil {
 		return "", fmt.Errorf("failed to build config: %w", err)
-	}
-
-	val, ok := pmi.Annotations[EnableVMTestKey]
-	if ok {
-		cfg.Dev.FakeCpuMeter.Enabled = ptr.To(val == "true")
 	}
 
 	cfg.Log.Level = pmi.Spec.Kepler.Config.LogLevel

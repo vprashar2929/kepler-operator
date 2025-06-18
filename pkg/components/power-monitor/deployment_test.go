@@ -17,7 +17,6 @@ import (
 	"github.com/sustainable.computing.io/kepler-operator/pkg/utils/k8s"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 )
 
 func TestPowerMonitorNodeSelection(t *testing.T) {
@@ -118,6 +117,8 @@ func TestPowerMonitorDaemonSet(t *testing.T) {
 			exporterCommand: []string{
 				"/usr/bin/kepler",
 				fmt.Sprintf("--config.file=%s", filepath.Join(KeplerConfigMapPath, KeplerConfigFile)),
+				"--kube.enable",
+				"--kube.node-name=$(NODE_NAME)",
 			},
 			volumeMounts: []corev1.VolumeMount{
 				{Name: "sysfs", MountPath: SysFSMountPath, ReadOnly: true},
@@ -137,6 +138,8 @@ func TestPowerMonitorDaemonSet(t *testing.T) {
 			exporterCommand: []string{
 				"/usr/bin/kepler",
 				fmt.Sprintf("--config.file=%s", filepath.Join(KeplerConfigMapPath, KeplerConfigFile)),
+				"--kube.enable",
+				"--kube.node-name=$(NODE_NAME)",
 			},
 			volumeMounts: []corev1.VolumeMount{
 				{Name: "sysfs", MountPath: SysFSMountPath, ReadOnly: true},
@@ -358,10 +361,21 @@ func TestPowerMonitorDashboards(t *testing.T) {
 				"console.openshift.io/dashboard": "true",
 				"app.kubernetes.io/managed-by":   "kepler-operator",
 			},
-			dashboardName:      InfoDashboardName,
+			dashboardName:      OverviewDashboardName,
 			dashboardNamespace: DashboardNs,
-			cmKey:              fmt.Sprintf("%s.json", InfoDashboardName),
+			cmKey:              fmt.Sprintf("%s.json", OverviewDashboardName),
 			scenario:           "info dashboard case",
+		},
+		{
+			createDashboard: NewPowerMonitorNamespaceInfoDashboard,
+			labels: k8s.StringMap{
+				"console.openshift.io/dashboard": "true",
+				"app.kubernetes.io/managed-by":   "kepler-operator",
+			},
+			dashboardName:      NamespaceInfoDashboardName,
+			dashboardNamespace: DashboardNs,
+			cmKey:              fmt.Sprintf("%s.json", NamespaceInfoDashboardName),
+			scenario:           "namespace info dashboard case",
 		},
 	}
 	for _, tc := range tt {
@@ -504,33 +518,6 @@ func TestKeplerConfig(t *testing.T) {
 		assert.Equal(t, defaultConfig.String(), configStr)
 	})
 
-	t.Run("With fake CPU meter enabled", func(t *testing.T) { // TODO: remove this test
-		pmi := &v1alpha1.PowerMonitorInternal{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "power-monitor-internal",
-				Annotations: map[string]string{
-					EnableVMTestKey: "true",
-				},
-			},
-			Spec: v1alpha1.PowerMonitorInternalSpec{
-				Kepler: v1alpha1.PowerMonitorInternalKeplerSpec{
-					Config: v1alpha1.PowerMonitorInternalKeplerConfigSpec{
-						LogLevel: "info",
-					},
-				},
-			},
-		}
-
-		configStr, err := KeplerConfig(pmi)
-
-		defaultConfig := config.DefaultConfig()
-		defaultConfig.Host.ProcFS = ProcFSMountPath
-		defaultConfig.Host.SysFS = SysFSMountPath
-		defaultConfig.Dev.FakeCpuMeter.Enabled = ptr.To(true)
-
-		assert.NoError(t, err)
-		assert.Equal(t, defaultConfig.String(), configStr)
-	})
 	t.Run("With invalid additional config", func(t *testing.T) {
 		pmi := &v1alpha1.PowerMonitorInternal{
 			ObjectMeta: metav1.ObjectMeta{
