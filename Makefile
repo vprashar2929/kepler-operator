@@ -43,7 +43,7 @@ $(error VERSION cannot be empty)
 endif
 
 KEPLER_VERSION ?=release-0.7.12
-KEPLER_REBOOT_VERSION ?=v0.0.9
+KEPLER_REBOOT_VERSION ?=v0.0.10
 
 # IMG_BASE and KEPLER_IMG_BASE are set to distinguish between Operator-specific images and Kepler-Specific images.
 # IMG_BASE is used for building and pushing operator related images.
@@ -70,6 +70,8 @@ LDFLAGS=-ldflags "\
 	-X github.com/sustainable.computing.io/kepler-operator/pkg/version.gitBranch=$(GIT_BRANCH) \
 	-X github.com/sustainable.computing.io/kepler-operator/pkg/version.gitCommit=$(GIT_COMMIT) \
 "
+
+CGO_ENABLED ?= 0
 
 .PHONY: fresh
 fresh: ## default target - sets up a k8s cluster with images ready for deployment
@@ -186,7 +188,7 @@ build: manifests generate build-manager ## Build manager binary.
 
 .PHONY: build-manager
 build-manager:
-	CGO_ENABLED=0 go build $(LDFLAGS) -o bin/manager ./cmd/...
+	CGO_ENABLED=$(CGO_ENABLED) go build $(LDFLAGS) -o bin/manager ./cmd/...
 
 OPENSHIFT ?= true
 RUN_ARGS ?=
