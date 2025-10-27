@@ -1,0 +1,504 @@
+apiVersion: perses.dev/v1alpha1
+kind: PersesDashboard
+metadata:
+  namespace: perses-dev
+  name: power-monitor-dashboard
+spec:
+  display:
+    name: Power Monitor Dashboard
+  variables:
+    - kind: ListVariable
+      spec:
+        display:
+          name: Node
+          description: Node to choose
+          hidden: false
+        allowAllValue: false
+        allowMultiple: false
+        sort: none
+        plugin:
+          kind: PrometheusLabelValuesVariable
+          spec:
+            labelName: instance
+            matchers:
+              - kepler_node_cpu_info{job="$job"}
+        name: node
+    - kind: ListVariable
+      spec:
+        display:
+          name: Zone
+          description: Zone to choose
+          hidden: false
+        defaultValue: $__all
+        allowAllValue: true
+        allowMultiple: false
+        customAllValue: .*
+        sort: none
+        plugin:
+          kind: PrometheusLabelValuesVariable
+          spec:
+            labelName: zone
+            matchers:
+              - kepler_node_cpu_watts{job="$job"}
+        name: zone
+    - kind: ListVariable
+      spec:
+        display:
+          name: Namespace
+          description: Namespace to choose
+          hidden: false
+        defaultValue: $__all
+        allowAllValue: true
+        allowMultiple: false
+        customAllValue: .*
+        sort: none
+        plugin:
+          kind: PrometheusLabelValuesVariable
+          spec:
+            labelName: pod_namespace
+            matchers:
+              - kepler_pod_cpu_watts{job="$job"}
+        name: namespace
+    - kind: ListVariable
+      spec:
+        display:
+          name: Pod
+          description: Pod to choose
+          hidden: false
+        defaultValue: $__all
+        allowAllValue: true
+        allowMultiple: false
+        customAllValue: .*
+        sort: none
+        plugin:
+          kind: PrometheusLabelValuesVariable
+          spec:
+            labelName: pod_name
+            matchers:
+              - kepler_pod_cpu_watts{job="$job", pod_namespace=~"$namespace"}
+        name: pod
+    - kind: ListVariable
+      spec:
+        display:
+          name: Job
+          description: Job to choose
+          hidden: false
+        defaultValue: power-monitor
+        allowAllValue: false
+        allowMultiple: false
+        sort: none
+        plugin:
+          kind: PrometheusLabelValuesVariable
+          spec:
+            labelName: job
+            matchers:
+              - kepler_pod_cpu_watts
+        name: job
+  panels:
+    "0_0":
+      kind: Panel
+      spec:
+        display:
+          name: Current Power Consumption By Zone
+        plugin:
+          kind: Table
+          spec:
+            columnSettings:
+              - header: Watts
+                name: value
+              - header: Zone Name
+                name: zone
+              - hide: true
+                name: timestamp
+            density: compact
+        queries:
+          - kind: TimeSeriesQuery
+            spec:
+              plugin:
+                kind: PrometheusTimeSeriesQuery
+                spec:
+                  query: sum by (zone) (kepler_node_cpu_watts{job="$job", zone=~"$zone"})
+    "0_1":
+      kind: Panel
+      spec:
+        display:
+          name: Current Active Power Consumption By Zone
+        plugin:
+          kind: Table
+          spec:
+            columnSettings:
+              - header: Watts
+                name: value
+              - header: Zone Name
+                name: zone
+              - hide: true
+                name: timestamp
+            density: compact
+        queries:
+          - kind: TimeSeriesQuery
+            spec:
+              plugin:
+                kind: PrometheusTimeSeriesQuery
+                spec:
+                  query: sum by (zone) (kepler_node_cpu_active_watts{job="$job", zone=~"$zone"})
+    "0_2":
+      kind: Panel
+      spec:
+        display:
+          name: Current Idle Power Consumption By Zone
+        plugin:
+          kind: Table
+          spec:
+            columnSettings:
+              - header: Watts
+                name: value
+              - header: Zone Name
+                name: zone
+              - hide: true
+                name: timestamp
+            density: compact
+        queries:
+          - kind: TimeSeriesQuery
+            spec:
+              plugin:
+                kind: PrometheusTimeSeriesQuery
+                spec:
+                  query: sum by (zone) (kepler_node_cpu_idle_watts{job="$job", zone=~"$zone"})
+    "1_0":
+      kind: Panel
+      spec:
+        display:
+          name: CPU Info
+        plugin:
+          kind: Table
+          spec:
+            columnSettings:
+              - header: Cores
+                name: value
+              - header: Node Name
+                name: instance
+              - header: Model Name
+                name: model_name
+              - hide: true
+                name: timestamp
+              - hide: false
+                name: value
+            density: compact
+        queries:
+          - kind: TimeSeriesQuery
+            spec:
+              plugin:
+                kind: PrometheusTimeSeriesQuery
+                spec:
+                  query: count by (instance, model_name)(kepler_node_cpu_info{job="$job"})
+    "2_0":
+      kind: Panel
+      spec:
+        display:
+          name: RAPL Info
+        plugin:
+          kind: Table
+          spec:
+            columnSettings:
+              - header: Node
+                name: node_name
+              - header: Zones
+                name: zone (uniqueValues)
+            density: compact
+        queries:
+          - kind: TimeSeriesQuery
+            spec:
+              plugin:
+                kind: PrometheusTimeSeriesQuery
+                spec:
+                  query: group by (node_name,zone)(kepler_node_cpu_watts{job="$job"})
+    "3_0":
+      kind: Panel
+      spec:
+        display:
+          name: Total Power Consumption (W) per Zone
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              mode: list
+              position: bottom
+              values: []
+            visual:
+              areaOpacity: 0.11
+              connectNulls: false
+              display: line
+              lineWidth: 2
+        queries:
+          - kind: TimeSeriesQuery
+            spec:
+              plugin:
+                kind: PrometheusTimeSeriesQuery
+                spec:
+                  minStep: ""
+                  query: sum by (zone) (kepler_node_cpu_watts{job="$job", zone=~"$zone"})
+                  seriesNameFormat: Zone - {{zone}}
+    "3_1":
+      kind: Panel
+      spec:
+        display:
+          name: Node Power Consumption (W) By Zone
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              mode: list
+              position: bottom
+              values: []
+            visual:
+              areaOpacity: 0.11
+              connectNulls: false
+              display: line
+              lineWidth: 2
+        queries:
+          - kind: TimeSeriesQuery
+            spec:
+              plugin:
+                kind: PrometheusTimeSeriesQuery
+                spec:
+                  minStep: ""
+                  query: kepler_node_cpu_watts{job="$job", instance=~"$node", zone=~"$zone"}
+                  seriesNameFormat: "{{zone}} - {{instance}}"
+    "3_2":
+      kind: Panel
+      spec:
+        display:
+          name: Node Active Power Consumption (W) By Zone
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              mode: list
+              position: bottom
+              values: []
+            visual:
+              areaOpacity: 0.11
+              connectNulls: false
+              display: line
+              lineWidth: 2
+        queries:
+          - kind: TimeSeriesQuery
+            spec:
+              plugin:
+                kind: PrometheusTimeSeriesQuery
+                spec:
+                  minStep: ""
+                  query: kepler_node_cpu_active_watts{job="$job", instance=~"$node", zone=~"$zone"}
+                  seriesNameFormat: "{{zone}} - {{instance}}"
+    "3_3":
+      kind: Panel
+      spec:
+        display:
+          name: Node Idle Power Consumption (W) By Zone
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              mode: list
+              position: bottom
+              values: []
+            visual:
+              areaOpacity: 0.11
+              connectNulls: false
+              display: line
+              lineWidth: 2
+        queries:
+          - kind: TimeSeriesQuery
+            spec:
+              plugin:
+                kind: PrometheusTimeSeriesQuery
+                spec:
+                  minStep: ""
+                  query: kepler_node_cpu_idle_watts{job="$job", instance=~"$node", zone=~"$zone"}
+                  seriesNameFormat: "{{zone}} - {{instance}}"
+    "4_0":
+      kind: Panel
+      spec:
+        display:
+          name: Top 10 Power Consuming Namespaces (W) per Zone
+        plugin:
+          kind: Table
+          spec:
+            columnSettings:
+              - header: Power Consumption
+                name: value
+              - header: Namespace
+                name: pod_namespace
+              - header: Zone
+                name: zone
+              - hide: true
+                name: timestamp
+            density: compact
+        queries:
+          - kind: TimeSeriesQuery
+            spec:
+              plugin:
+                kind: PrometheusTimeSeriesQuery
+                spec:
+                  query: topk(10,sum by (pod_namespace,zone)(kepler_pod_cpu_watts{job="$job", zone=~"$zone"}))
+    "4_1":
+      kind: Panel
+      spec:
+        display:
+          name: Total Power Consumption of Pods in Namespace (W) per Zone
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              mode: list
+              position: bottom
+              values: []
+            visual:
+              areaOpacity: 0.11
+              connectNulls: false
+              display: line
+              lineWidth: 2
+        queries:
+          - kind: TimeSeriesQuery
+            spec:
+              plugin:
+                kind: PrometheusTimeSeriesQuery
+                spec:
+                  minStep: ""
+                  query: sum by (zone) (kepler_pod_cpu_watts{job="$job", pod_namespace=~"$namespace", zone=~"$zone"})
+                  seriesNameFormat: Zone - {{zone}}
+    "4_2":
+      kind: Panel
+      spec:
+        display:
+          name: Pod Power Consumption (W) By Zone
+        plugin:
+          kind: TimeSeriesChart
+          spec:
+            legend:
+              mode: list
+              position: bottom
+              values: []
+            visual:
+              areaOpacity: 0.11
+              connectNulls: false
+              display: line
+              lineWidth: 2
+        queries:
+          - kind: TimeSeriesQuery
+            spec:
+              plugin:
+                kind: PrometheusTimeSeriesQuery
+                spec:
+                  minStep: ""
+                  query: kepler_pod_cpu_watts{job="$job", pod_namespace=~"$namespace", pod_name=~"$pod", zone=~"$zone"}
+                  seriesNameFormat: "{{zone}} - {{pod_name}}"
+  layouts:
+    - kind: Grid
+      spec:
+        display:
+          title: Cluster Wide Consumption
+          collapse:
+            open: true
+        items:
+          - x: 0
+            "y": 1
+            width: 8
+            height: 8
+            content:
+              $ref: "#/spec/panels/0_0"
+          - x: 8
+            "y": 1
+            width: 8
+            height: 8
+            content:
+              $ref: "#/spec/panels/0_1"
+          - x: 16
+            "y": 1
+            width: 8
+            height: 8
+            content:
+              $ref: "#/spec/panels/0_2"
+    - kind: Grid
+      spec:
+        display:
+          title: Node Info
+          collapse:
+            open: true
+        items:
+          - x: 0
+            "y": 10
+            width: 24
+            height: 8
+            content:
+              $ref: "#/spec/panels/1_0"
+    - kind: Grid
+      spec:
+        display:
+          title: RAPL Info
+          collapse:
+            open: true
+        items:
+          - x: 0
+            "y": 19
+            width: 24
+            height: 8
+            content:
+              $ref: "#/spec/panels/2_0"
+    - kind: Grid
+      spec:
+        display:
+          title: Node Consumption
+          collapse:
+            open: true
+        items:
+          - x: 0
+            "y": 28
+            width: 24
+            height: 10
+            content:
+              $ref: "#/spec/panels/3_0"
+          - x: 0
+            "y": 38
+            width: 8
+            height: 10
+            content:
+              $ref: "#/spec/panels/3_1"
+          - x: 8
+            "y": 38
+            width: 8
+            height: 10
+            content:
+              $ref: "#/spec/panels/3_2"
+          - x: 16
+            "y": 38
+            width: 8
+            height: 10
+            content:
+              $ref: "#/spec/panels/3_3"
+    - kind: Grid
+      spec:
+        display:
+          title: Power Monitor - Namespace Info
+          collapse:
+            open: true
+        items:
+          - x: 0
+            "y": 49
+            width: 24
+            height: 12
+            content:
+              $ref: "#/spec/panels/4_0"
+          - x: 0
+            "y": 61
+            width: 12
+            height: 10
+            content:
+              $ref: "#/spec/panels/4_1"
+          - x: 12
+            "y": 61
+            width: 12
+            height: 10
+            content:
+              $ref: "#/spec/panels/4_2"
+  duration: 1h

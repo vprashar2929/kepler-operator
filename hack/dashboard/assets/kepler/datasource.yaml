@@ -1,0 +1,17 @@
+apiVersion: perses.dev/v1alpha1
+kind: PersesDatasource
+metadata:
+  name: prometheus
+  namespace: perses-dev
+spec:
+  config:
+    default: true
+    display:
+      name: Kepler Datasource
+    plugin:
+      kind: PrometheusDatasource
+      spec:
+        proxy:
+          kind: HTTPProxy
+          spec:
+            url: http://prometheus-k8s.monitoring.svc.cluster.local:9090
